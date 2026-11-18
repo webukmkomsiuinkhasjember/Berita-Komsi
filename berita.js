@@ -1,88 +1,11 @@
-/* ========================
-   KOMSI NEWS PRO
-   HALAMAN DETAIL BERITA
-======================== */
-
-
-const artikel =
-JSON.parse(
-localStorage.getItem("artikel")
-);
-
-
-/* Jika artikel tidak ada */
-if(!artikel){
-
-window.location.href =
-"index.html";
-
-}
-
-
-document.getElementById("judul")
-.innerHTML =
-artikel.judul;
-
-
-document.getElementById("kategori")
-.innerHTML =
-artikel.kategori;
-
-
-document.getElementById("penulis")
-.innerHTML =
-artikel.penulis;
-
-
-document.getElementById("tanggal")
-.innerHTML =
-artikel.tanggal;
-
-
-document.getElementById("gambar")
-.src =
-artikel.gambar;
-
-
-document.getElementById("isi")
-.innerHTML =
-`
-<p>${artikel.isi}</p>
-
-<p>
-KOMSI NEWS terus menjadi media informasi dan dokumentasi kegiatan UKM Komunitas Seni UIN KHAS Jember.
-</p>
-`;
-
-
-
-
-/* ========================
-   SHARE WHATSAPP
-======================== */
-
-
-function shareWA(){
-
-
-let pesan =
-`
-📰 ${artikel.judul}
-
-✍️ ${artikel.penulis}
-
-${artikel.isi}
-
-Baca berita terbaru hanya di KOMSI NEWS
-`;
-
-
-let link =
-"https://wa.me/?text=" +
-encodeURIComponent(pesan);
-
-
-window.open(link,"_blank");
-
-
-}
+(() => {
+"use strict";
+const root=document.getElementById("article"), params=new URLSearchParams(location.search), id=params.get("id");
+const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n};
+const date=v=>{if(!v)return "Tanggal belum tersedia";const d=new Date(v);return Number.isNaN(d.getTime())?String(v):new Intl.DateTimeFormat("id-ID",{day:"numeric",month:"long",year:"numeric"}).format(d)};
+const imageUrl=v=>{try{const u=new URL(v,location.href);return ["http:","https:"].includes(u.protocol)?u.href:""}catch{return ""}};
+function fail(msg){root.replaceChildren(make("h1","","Artikel tidak ditemukan"),make("p","status-message",msg))}
+function render(a){document.title=(a.judul||"Detail Berita")+" — KOMSI NEWS";const h=make("header","article-header");h.append(make("span","tag",a.kategori||"Berita"),make("h1","",a.judul||"Tanpa judul"),make("p","article-meta",(a.penulis||"Redaksi KOMSI")+" · "+date(a.tanggal)));const body=make("div","article-content");const src=imageUrl(a.gambar);if(src){const img=make("img","article-image");img.src=src;img.alt=a.judul||"Foto berita";img.onerror=()=>img.remove();body.append(img)}const parts=String(a.isi||"").split(/\n{2,}/).filter(Boolean);if(!parts.length)body.append(make("p","","Isi berita belum tersedia."));parts.forEach(p=>body.append(make("p","",p)));const btn=make("button","share-button","Bagikan melalui WhatsApp");btn.type="button";btn.addEventListener("click",()=>window.open("https://wa.me/?text="+encodeURIComponent([a.judul,a.penulis,location.href].filter(Boolean).join("\n\n")),"_blank","noopener,noreferrer"));root.replaceChildren(h,body,btn)}
+async function init(){document.getElementById("year").textContent=new Date().getFullYear();if(!id){fail("Tautan artikel tidak memiliki ID. Pilih berita dari halaman beranda.");return}try{const r=await fetch("data/berita.json",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);const data=await r.json();const a=Array.isArray(data)?data.find(x=>String(x.id)===id):null;if(!a){fail("Berita mungkin telah dipindahkan atau belum diterbitkan.");return}render(a)}catch(e){console.error(e);fail("Artikel gagal dimuat. Silakan coba beberapa saat lagi.")}}
+init();
+})();
